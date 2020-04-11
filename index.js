@@ -1,11 +1,10 @@
 #!/usr/bin/env node
+const fs = require('fs')
 const prompt = require('prompt')
 const rimraf = require("rimraf")
 const ghdownload = require('github-download')
 const replaceInFile = require('replace-in-file')
 const uppercamelcase = require('uppercamelcase')
-
-const dist = 'dist'
 
 const properties = [
   {
@@ -30,15 +29,20 @@ const properties = [
   },
 ]
 
+let projectProperties = {}
+
 prompt.start()
 
 prompt.get(properties, async function (err, result) {
   if (err) { return onErr(err) }
   console.log('Creating plugin')
+
+  projectProperties = normalizeProperties(result)
   
   await deleteDist()
   await download()
-  await replaceNames(result)
+  await replaceNames()
+  await renameEntryPoint()
 
   console.log('Done!')
   console.log('Check dist folder')
@@ -49,7 +53,7 @@ const onErr = function(err) {
   return 1
 }
 
-const replaceNames = async (params) => {
+const normalizeProperties = (params) => {
   const projectDefault = params.project
   const projectCamelCase = uppercamelcase(projectDefault)
   const projectDashCase = projectDefault.toLowerCase().replace(/\s/g, '-')
@@ -57,9 +61,37 @@ const replaceNames = async (params) => {
   const author = params.author
   const description = params.description
 
+  return {
+    projectName: projectDefault,
+    projectCamelCase: projectCamelCase,
+    projectDashCase: projectDashCase,
+    author: author,
+    description: description,
+  }
+}
+
+const renameEntryPoint = async () => {
+  return new Promise((resolve, reject) => {
+    fs.rename(
+      projectProperties.projectDashCase + '/plugin-base-boilerplate.php', 
+      projectProperties.projectDashCase + '/' + projectProperties.projectDashCase + '.php',
+      function (err) {
+        if (err) {
+          reject()
+          throw err
+        }
+
+        console.log('Entry point renamed');
+        resolve()
+      }
+    )
+  })
+}
+
+const replaceNames = async () => {
   await replaceInFile
     .sync({
-      files: dist + '/**/*',
+      files: projectProperties.projectDashCase + '/**/*',
       from: [
         /Plugin Base Boilerplate/g,
         /PluginBaseBoilerplate/g,
@@ -68,11 +100,11 @@ const replaceNames = async (params) => {
         /Saulo Paiva/g,
       ],
       to: [
-        projectDefault,
-        projectCamelCase,
-        projectDashCase,
-        description,
-        author,
+        projectProperties.projectName,
+        projectProperties.projectCamelCase,
+        projectProperties.projectDashCase,
+        projectProperties.description,
+        projectProperties.author,
       ],
     })
 
@@ -80,12 +112,12 @@ const replaceNames = async (params) => {
 }
 
 const deleteDist = async () => {
-  rimraf.sync(dist)
+  rimraf.sync(projectProperties.projectDashCase)
 }
 
 const download = async () => {
   return new Promise((resolve, reject) => {
-    ghdownload({user: 'saulopaiva', repo: 'plugin-base-boilerplate', ref: 'master'}, dist)
+    ghdownload({user: 'saulopaiva', repo: 'plugin-base-boilerplate', ref: 'master'}, projectProperties.projectDashCase)
       .on('error', function(err) {
         console.error(err)
         reject()

@@ -9,6 +9,7 @@
   "author": "Saulo Paiva",
   "license": "ISC",
   "dependencies": {
+    "fs": "0.0.1-security",
     "github-download": "^0.5.0",
     "prompt": "^1.0.0",
     "replace-in-file": "^5.0.2",
