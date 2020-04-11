@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 const prompt = require('prompt')
 const rimraf = require("rimraf")
 const ghdownload = require('github-download')

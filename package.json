@@ -14,5 +14,8 @@
     "replace-in-file": "^5.0.2",
     "rimraf": "^3.0.2",
     "uppercamelcase": "^3.0.0"
+  },
+  "bin": {
+    "create-plugin": "./index.js"
   }
 }
